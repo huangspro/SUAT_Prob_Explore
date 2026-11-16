@@ -1,0 +1,360 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{cleveref}
+
+\title{Probabilistic Modeling and Capacity Planning for GPU-Based AI Services}
+\author{Haoyu Huang \\ \\ SUAT25000228}
+
+\begin{document}
+	\maketitle
+	\newpage
+	\tableofcontents
+	\newpage
+	
+	\section{Denotation}
+	\begin{itemize}
+		\item $m$: The number GPU;
+		\item $N_T$: Number of text requests within one minute;
+		\item $N_I$: Number of image requests within one minute;
+		\item $T_1, T_2, \ldots$: GPU processing time of each text request within one minute;
+		\item $I_1, I_2, \ldots$: GPU processing time of each image request within one minute;
+		\item $W$: Total GPU workload within one minute.
+	\end{itemize}
+	
+	Accordingly, the total GPU workload can be expressed as:
+	\begin{equation}
+		W = \sum_{j=1}^{N_T} T_j + \sum_{k=1}^{N_I} I_k.
+	\end{equation}
+	
+	\section{Step 1}
+	
+	\subsection{Drawing the Box Plots}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.7\linewidth]{../graphs/text_requests_boxplot}
+		\caption{Box plots of text requests}
+		\label{fig:textrequestsboxplot}
+	\end{figure}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.7\linewidth]{../graphs/image_requests_boxplot}
+		\caption{Box plots of image requests}
+		\label{fig:imagerequestsboxplot}
+	\end{figure}
+	
+	The box plots for the two types of requests are presented in
+	\cref{fig:textrequestsboxplot} and \cref{fig:imagerequestsboxplot},
+	respectively. As can be observed, an analysis limited exclusively
+	to peak hours on weekdays is insufficient to provide a
+	comprehensive representation of the actual trends in request
+	volumes.
+	
+	\subsection{Establishing Poisson Distributions}
+	We assume that $N_t$ and $N_i$ follow Poisson distributions,
+	which can be expressed as follows:
+	
+	\[
+	P(N_t=k) = \frac{\lambda_t^k e^{-\lambda_t}}{k!},
+	P(N_i=k) = \frac{\lambda_i^k e^{-\lambda_i}}{k!}.
+	\]
+	
+	The parameters $\lambda_t$ and $\lambda_i$ can be estimated
+	using the corresponding sample means:
+	
+	\[
+	\hat{\lambda} = \frac{1}{n}\sum_{i=1}^{n}N_i.
+	\], where n denotes the total minutes.
+	
+	The 95\% confidence interval for the Poisson parameter
+	$\lambda$ can be approximated using the normal approximation:
+	
+	\[
+	CI_{95\%} =
+	\left[
+	\hat{\lambda} - 1.96\sqrt{\frac{\hat{\lambda}}{n}},
+	\hat{\lambda} + 1.96\sqrt{\frac{\hat{\lambda}}{n}}
+	\right].
+	\]
+	The estimation results are presented in
+	\cref{tab:poisson_parameters_estimation}.
+	
+	\begin{table}[H]
+		\centering
+		\caption{Parameter Estimation for Poisson Distributions}
+		\label{tab:poisson_parameters_estimation}
+		\begin{tabular}{ccccccc}
+			\hline
+			Type & $ \lambda $ & 95\% (s)  \\
+			\hline
+			Text  & 45.4513 & [45.3583, 45.5444]  \\
+			Image & 3.6389 & [3.6126, 3.6653]  \\
+			\hline
+		\end{tabular}
+	\end{table}
+	
+
+	\subsection{Validating the Poisson Distributions}
+	To evaluate the goodness of fit of the Poisson distributions, we conducted a $\chi^2$ goodness-of-fit test, defined as:
+	\[
+	\chi^2 = \sum_{i=1}^{k} \frac{(O_i - E_i)^2}{E_i},
+	\]
+	where $O_i$ denotes the observed frequency of class $i$, and $E_i$ denotes its corresponding expected frequency. The test results are presented in \cref{tab:poisson_goodness-of-fit}. The results indicate that the Poisson distributions do not adequately fit the empirical distributions of either text or image requests. This discrepancy may be attributed to the potential dependence among requests within a given minute, which undermines the assumption of independent event occurrences at a fixed time interval. In real-world scenarios, users tend to send multiple messages to AI agents in rapid succession, thereby violating a fundamental assumption of the Poisson model.
+
+	A non-homogeneous Poisson process is likely to better fit the empirical request distribution, as its key distinction from the homogeneous Poisson process is that the event arrival rate is allowed to vary over time. Specifically, the number of events occurring within a time interval $[a,b]$ follows a Poisson distribution with a time-dependent parameter:
+	\[
+	N(b)-N(a) \sim \operatorname{Poisson}\left(\int_a^b \lambda(t)\,dt\right),
+	\]
+	where $\lambda(t)$ denotes the instantaneous event arrival rate at time $t$. Unlike the homogeneous Poisson process, which assumes a constant arrival rate, the non-homogeneous Poisson process allows the arrival rate to vary over time, thereby accommodating temporal variations in request intensity.
+	
+	\begin{table}[H]
+		\centering
+		\caption{Results of the Poisson Goodness-of-Fit Tests}
+		\label{tab:poisson_goodness-of-fit}
+		\begin{tabular}{ccccccc}
+			\hline
+			Type & $ \chi^2 $ & Conclusion  \\
+			\hline
+			Text  & 8369296.14 & Rejected  \\
+			Image & 72418.63 & Rejected  \\
+			\hline
+		\end{tabular}
+	\end{table}
+	
+	\subsection{Correlation Coefficient Between $N_t$ and $N_i$}
+	The correlation coefficient between $N_t$ and $N_i$ is
+	defined as:
+	\[
+	r = \frac{\sum_{i=1}^{n}(N_t-\bar{N})(N_i-\bar{N_i})}
+	{\sqrt{\sum_{i=1}^{n}(N_t-\bar{N_t})^2}\sqrt{\sum_{i=1}^{n}(N_i-\bar{N_i})^2}}
+	\].
+	The estimated correlation coefficient is approximately 0.7851,
+	indicating a strong positive correlation between text and image
+	request volumes. This suggests that the two types of requests
+	are likely influenced by common traffic patterns, potentially
+	associated with multimodal requests.
+	
+	
+	
+	
+	\section{Step 2}
+	
+	\subsection{Report on Service Time Data}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=1\linewidth]{../graphs/service_time_report}
+		\caption{Histograms of the two types of requests}
+		\label{fig:servicetimereport}
+	\end{figure}
+	
+	\begin{table}[htbp]
+		\centering
+		\caption{Descriptive Statistics of Text and Image Request Durations (seconds)}
+		\label{tab:request_statistics}
+		\begin{tabular}{ccccccc}
+			\hline
+			Type & Size & Mean (s) & Std (s)
+			& Median (s) & 95\% (s) & 99\% (s) \\
+			\hline
+			Text  & 4000 & 0.762147 & 0.628502 & 0.633650 & 1.464310 & 3.528130 \\
+			Image & 1600 & 7.476124 & 6.247750 & 5.916300 & 17.529665 & 29.749451 \\
+			\hline
+		\end{tabular}
+	\end{table}
+	
+	\subsection{Analysis of the Effect of Cold Starts on Service Time}
+	GPU system cold starts can result in substantial increases
+	in response latency. The results presented in
+	\cref{tab:affect_of_cold_start} demonstrate that cold starts
+	can considerably extend request processing times. According
+	to the law of total probability:
+	\[
+	P(T) = P(cold start)P(t|cold start) + P(hot start)P(t|hot start)
+	\],
+	cold starts can contribute to an increase in the overall
+	mean response time and a heavier right tail in the
+	response time distribution.
+	
+	\begin{table}[H]
+		\centering
+		\caption{Effect of Cold Starts on Response Time}
+		\label{tab:affect_of_cold_start}
+		\begin{tabular}{ccccccc}
+			\hline
+			Type & Cold Start(s) & Hot Start(s)  \\
+			\hline
+			Text  & 3.6992 & 0.6884 \\
+			Image & 23.5168 & 6.6541  \\
+			\hline
+		\end{tabular}
+	\end{table}
+
+	\subsection{Establishing the Probability Model}
+	
+	A probability model can be constructed based on the observed service time distributions. In this report, the Gaussian distribution is adopted as the underlying probability model. Specifically:
+	
+	\[
+	f(T)=\frac{1}{\sqrt{2\pi}\sigma_T}
+	\exp\left(-\frac{(x-\mu_T)^2}{2\sigma_T^2}\right),
+	\]
+	
+	\[
+	f(I)=\frac{1}{\sqrt{2\pi}\sigma_I}
+	\exp\left(-\frac{(x-\mu_I)^2}{2\sigma_I^2}\right),
+	\]
+	
+	where $T$ and $I$ denote the service durations of individual text and image requests, respectively. Here, $\mu_T$ and $\mu_I$ represent the mean service times, while $\sigma_T^2$ and $\sigma_I^2$ denote the corresponding variances. Furthermore, $E(T^2)$ and $E(I^2)$ represent the second raw moments of the respective service time distributions, which are related to the means and variances by:
+	
+	\[
+	E(T^2)=\sigma_T^2+\mu_T^2,
+	\qquad
+	E(I^2)=\sigma_I^2+\mu_I^2.
+	\]
+	
+	\subsection{Estimating the Model Parameters}
+	
+	The estimated model parameters are presented in \cref{tab:gaussian_estimation}.
+	
+	\begin{table}[H]
+		\centering
+		\caption{Estimated Parameters of the Gaussian Distributions}
+		\label{tab:gaussian_estimation}
+		\begin{tabular}{cccccc}
+			\hline
+			$\mu_T$ & $\sigma_T^2$ & $\mu_I$ & $\sigma_I^2$ & $E(T^2)$ & $E(I^2)$\\
+			\hline
+			0.7621 & 0.6285 & 7.4761 & 6.2477 & 0.9758 & 94.9024\\
+			\hline
+		\end{tabular}
+	\end{table}
+	
+	\section{Step 3}
+	\subsection{Estimation of $E(W)$ and $D(W)$}
+	Assuming $N_T$ and $N_I$ are independent to each other, We have:
+	\[
+		\begin{aligned}
+		E(W)
+		&= E\left(\sum_{j=1}^{N_T}T_j\right)
+		 + E\left(\sum_{k=1}^{N_I}I_k\right)\\
+		&= E(N_T)E(T)+E(N_I)E(I)\\
+		&= \lambda_T\mu_T+\lambda_I\mu_I.
+		\end{aligned}
+	\]
+	and
+	\[
+	\begin{aligned}
+		D(W)
+		&= D\left(\sum_{j=1}^{N_T} T_j\right)
+		+ D\left(\sum_{k=1}^{N_I} I_k\right)\\
+		&= E(N_T)D(T)+E(N_I)D(I)\\
+		&= E(N_T)E(T^2)+E(N_I)E(I^2).
+	\end{aligned}
+	\]
+	The estimated results are presented on \cref{tab:W_estimation}.
+	\begin{table}[H]
+		\centering
+		\caption{Estimated Parameters of the Gaussian Distributions}
+		\label{tab:W_estimation}
+		\begin{tabular}{cccccc}
+			\hline
+			Target & Estimation & Contribution of $T$ & Contribution of $I$\\
+			\hline
+			$E(W)$ & 61.845   & 34.63 & 27.22 \\
+			\hline
+			$D(W)$ & 389.6947 & 44.34 &  345.44
+
+		\end{tabular}
+	\end{table}
+
+	\subsection{Assumption of Dependence Between $N_T$ and $N_I$}
+
+	The assumption of independence between $N_T$ and $N_I$ may not hold in practice. As indicated by the estimated correlation coefficient, the two types of requests exhibit a positive correlation, implying that $Cov(N_T,N_I)\neq 0$. Ignoring this dependence may introduce errors into the estimation of the total workload variance. Specifically, the variance calculation should account for the covariance between the two request types.
+	
+	In the following report we will follow the assumption of independence.
+	
+
+	\section{Step 4}
+	
+	\subsection{Estimation of $W$ Using The Central Limit Theorem}
+		According to the central limit theorem, 
+		\[
+			\frac{W-E(W)}{\sqrt{D(W)}} = \frac{{\sum_{j=1}^{N_T} T_j + \sum_{k=1}^{N_I} I_k}-E(W)}{\sqrt{D(W)}}
+			\sim\mathcal{N}(0,1)
+		\].
+	
+	\subsection{Estimation of $m$}
+	To estimate $m$, which is subject to the condition
+	$P(W>48m)$, we can use the following approximation:
+	\[
+	P(W>48m) = P(\hat{W} > \frac{48m-E(W)}{\sqrt{D(W)}}) = 0.01
+	\],
+	where
+	\[
+	\hat{W} = \frac{W-E(W)}{\sqrt{D(W)}}
+	\], namely
+	\[
+		\frac{48m-E(W)}{\sqrt{D(W)}} = 2.33
+	\]
+	and $\hat{W}\sim\mathcal{N}(0,1)$.
+	The resulting estimate is $m = 2.2467$.
+	
+
+	\subsection{Rationale and Risks of Using the Central Limit Theorem}
+	
+	When both $N_T$ and $N_I$ are sufficiently large, $W$ can be approximately modeled by a normal (Gaussian) distribution according to the Central Limit Theorem. However, potential risks arise from extreme values in the tails of the data distribution, which may lead to significant deviations from the normal approximation.
+	
+	Based on the estimated values of $N_T=45.45$ and $N_I=3.64$, the sample set is considered sufficient. Nevertheless, the imbalance between text and image requests may introduce instability into the normal approximation for image requests. Furthermore, the long-tailed distribution of service times caused by cold starts may affect the accuracy of the approximation, particularly in the right tail.
+
+	\section{Step 5}
+	\subsection{Monte Carlo Simulation Test}
+	To validate the accuracy of the Gaussian distribution model, a Monte Carlo simulation is conducted using randomly generated requests. The simulation consists of 500,000 iterations, with each iteration representing a one-minute interval. During each iteration, the total request processing time is calculated based on the estimated values of $N_T$ and $N_I$. An iteration is recorded as a failure if the total request processing time within that one-minute interval exceeds the GPU capacity of $48m$. 
+
+	\subsection{Test result}
+	The results $ratio = 0.9726\%$ indicate that the failure ratio remains below 1\%, thereby satisfying the specified requirement.
+	
+	\section{Step 6}
+	
+	\subsection{Scene A}
+	Assuming that the number of text and image requests rise by 30\%, while the time of single text or image request remains unchanged, the number of GPU $m$ should be updated. Specifically,
+	\[
+		N_T = N_T \cdot 130\%
+	\]
+	\[
+		N_I = N_I \cdot 130\%
+	\]. If m remains unchanged, the Monte Carlo Simulation Test suggests that the ratio of GPU overload will rise to 11.12\%. The re-evaluation of m based on the new situation is approximately 2.7676.
+	\subsection{Scene B}	
+	Assuming that the likelihood of image request is changed to 35\%, specifically, 
+	\[
+		N_I = (N_T+N_I)\cdot35\%
+	\]
+	\[
+		N_T = (N_T+N_I)\cdot65\%
+	\]. If m remains unchanged, the Monte Carlo Simulation Test suggests that the ratio of GPU overload will rise to 86.46\%. To maintain the 1\% requirement, m should be adjusted to 5.1615.
+	\section{Step 7}
+	\subsection{Decision Memorandum}
+	\begin{itemize}
+		\item Minimum configuration required to meet the current service-level targets: $m=2.2467$;
+		
+		\item Actual recommended configuration: $m=3$;
+		
+		\item Recommended configuration after three months: $m=3$;
+		
+		\item When the proportion of image requests increases to 35\%, simply adding GPU machines is expected to become impractical, since $I=9.81T$. The estimated value of $m$ will increase sharply as $I$ increases.
+		
+		\item The risk of GPU overload arises primarily from image request processing time and cold-start latency, whereas request fluctuations and average data traffic have comparatively minor contributions.
+		
+		\item It is recommended that the GPU service platform continuously monitor the average number of image requests and update the estimation of $W$ in real time. A GPU capacity expansion warning should be triggered if the following indicator falls below 2.33:
+		\[
+		\frac{48m-E(W)}{\sqrt{D(W)}} < 2.33,
+		\]
+		as this would indicate a degradation in the 1\% requirement.
+		
+		\item The conclusions of this report rely on the independence assumption between $N_T$ and $N_I$, as well as the Gaussian distribution model established based on prior knowledge. The independence assumption between $N_T$ and $N_I$ warrants further investigation through continuous data collection, particularly given the increasing popularity of multimodal LLMs.	
+	\end{itemize}
+\end{document}
