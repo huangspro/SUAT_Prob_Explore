@@ -89,4 +89,97 @@
 	\subsection{Question 4}
 	The answer to this question is ``Impossible''. From the perspective of information theory, each question provides 1 bit of information. However, identifying the position of a number among eight possible positions requires 3 bits of information. This means that at least three questions must be asked on average.
 	
+	\section{Step 2}
+	
+	\subsection{Question 1}
+	
+	Given a question tree, let \(l_i\) denote the depth of node \(i\), and define \(r_i = 2^{-l_i}\). To prove that
+	\[
+	\sum_{i=1}^{8} 2^{-l_i} = 1,
+	\]
+	we first observe that the eight leaf nodes can be divided into four groups, each consisting of two leaf nodes that share the same parent.
+	
+	Suppose that the parent of leaf nodes \(x\) and \(y\) is node \(z\). Then,
+	\[
+	l_z = l_x - 1 = l_y - 1.
+	\]
+	Therefore,
+	\[
+	\begin{aligned}
+		r_x + r_y
+		&= 2^{-l_y} + 2^{-l_x} \\
+		&= 2 \cdot 2^{-l_z-1} \\
+		&= 2^{-l_z} \\
+		&= r_z.
+	\end{aligned}
+	\]
+	
+	Thus, the value of \(r\) at each parent node equals the sum of the corresponding values at its two children. Applying this result recursively from the leaf nodes up to the root, we obtain
+	\[
+	\sum_{i=1}^{8} 2^{-l_i}
+	= r_{\mathrm{root}}
+	= 2^0
+	= 1.
+	\]
+	
+	On the other hand, the expected length of the tree \(T\) is given by
+	\[
+	\begin{aligned}
+		E(T)
+		&= \sum_{i=1}^{8} p_i l_i \\
+		&= -\sum_{i=1}^{8} p_i(-l_i) \\
+		&= -\sum_{i=1}^{8} p_i \log_2 2^{-l_i} \\
+		&= -\sum_{i=1}^{8} p_i \log_2 r_i.
+	\end{aligned}
+	\]
+	
+	\subsection{Question 2}
+	
+	Starting from the inequality $\ln t \leq t-1$, let
+	$t = \frac{r_i}{p_i}$. Substituting this expression gives
+	\[
+	\ln \frac{r_i}{p_i}
+	\leq \frac{r_i}{p_i}-1.
+	\]
+	Using the change-of-base formula, we obtain
+	\begin{align*}
+		\log_2 r_i - \log_2 p_i
+		&\leq \left(\frac{r_i}{p_i}-1\right)\log_2 e,\\
+		\log_2 r_i
+		&\leq \log_2 p_i
+		+ \left(\frac{r_i}{p_i}-1\right)\log_2 e.
+	\end{align*}
+	
+	Multiplying both sides by $-p_i$ reverses the
+	inequality, yielding
+	\[
+	-p_i\log_2 r_i
+	\geq -p_i\log_2 p_i
+	-(r_i-p_i)\log_2 e.
+	\]
+	
+	Summing over all eight leaf nodes, we have
+	\begin{align*}
+		-\sum_{i=1}^{8}p_i\log_2 r_i
+		&\geq -\sum_{i=1}^{8}p_i\log_2 p_i\\
+		&\quad -\log_2 e\sum_{i=1}^{8}(r_i-p_i).
+	\end{align*}
+	
+	Since $\sum_{i=1}^{8}r_i=1$ and
+	$\sum_{i=1}^{8}p_i=1$, it follows that
+	$\sum_{i=1}^{8}(r_i-p_i)=0$. Therefore,
+	\[
+	E(T)\geq -\sum_{i=1}^{8}p_i\log_2 p_i.
+	\]
+	
+	The Shannon entropy is defined as
+	\[
+	H(X)=-\sum_k p_k\log_2 p_k.
+	\]
+	Let $P$ denote the random variable representing the
+	number drawn from the bag. Hence,
+	\[
+	\boxed{E(T)\geq H(P).}
+	\]
+	\subsection{Question 3}
 \end{document}
