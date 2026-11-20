@@ -281,15 +281,373 @@
 		This property shows that the KL divergence is zero when the two probability distributions are identical and becomes positive when they differ. Therefore, it provides a mathematical measure of the difference between two probability distributions.
 		
 		\section{Step 4}
+		
 		\subsection{Question 1}
-		If the participant who is playing the game and will guess a number from package B can ask one of the following questions for free \\
-		(1) Whether the number belongs to ${1,3,4,6}$?\\
-		(2) Whether the number is equal to or less than 2?\\
-		I will choose question (1) because the 
+		If the participant playing the game, who is required to guess a number from Package B, is allowed to ask one of the following questions for free:
+		
+		(1) Does the number belong to the set $\{1,3,4,6\}$?
+		
+		(2) Is the number less than or equal to 2?
+		
+		I would choose Question (1), as its answer can distinguish half of the numbers in the package, whereas Question (2) can distinguish only $\frac{5}{16}$ of the numbers. Therefore, Question (1) is expected to provide more information gain, which can support subsequent decision-making.
+		
 		\subsection{Question 2}
+		To evaluate the performance of the two questions, we calculate the conditional probability distributions $P(X\mid C=1)$ and $P(X\mid C=0)$ for each strategy, as shown in \cref{tab:strategy_probabilities}.
+		
+		\subsubsection{Strategy 1}
+		
+		The conditional entropy is
+		\[
+		H(X|C)=\frac{1}{2}\cdot\frac{7}{4}
+		+\frac{1}{2}\cdot\frac{7}{4}
+		=\frac{7}{4}.
+		\]
+		
+		The marginal entropy is
+		\[
+		H(X)=-\sum_{x=1}^{8}P(x)\log_2P(x)
+		=\frac{9}{4}.
+		\]
+		
+		Therefore, the mutual information is
+		\[
+		I(X,C)=H(X)-H(X|C)
+		=\frac{9}{4}-\frac{7}{4}
+		=\boxed{0.5\text{ bits}}.
+		\]
+		
+		\subsubsection{Strategy 2}
+		
+		The conditional entropy is
+		\[
+		H(X|C)=\frac{1}{2}(0.721928+1.845351)
+		=1.283640.
+		\]
+		
+		The marginal entropy is
+		\[
+		H(X)=-\sum_{x=1}^{8}P(x)\log_2P(x)
+		=2.659091.
+		\]
+		
+		Therefore, the mutual information is
+		\[
+		I(X,C)=H(X)-H(X|C)
+		=2.659091-1.283640
+		=\boxed{1.375451\text{ bits}}.
+		\]
+		
+		Thus, Strategy 2 provides more information about the class variable
+		than Strategy 1, since
+		$I_{\text{Strategy 2}}>I_{\text{Strategy 1}}$.
+		
+		\begin{table}[H]
+			\centering
+			\caption{Conditional Probability Distributions of Two Strategies}
+			\label{tab:strategy_probabilities}
+			
+			\begin{tabular}{c|cccccccc}
+				\hline
+				$X$ & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 \\
+				\hline
+				$P(X \mid C=1)$
+				& $\frac{1}{8}$ & 0 & $\frac{1}{8}$ & $\frac{1}{4}$
+				& 0 & $\frac{1}{2}$ & 0 & 0 \\
+				
+				$P(X \mid C=0)$
+				& 0 & $\frac{1}{2}$ & 0 & 0
+				& $\frac{1}{8}$ & 0 & $\frac{1}{8}$ & $\frac{1}{4}$ \\
+				\hline
+			\end{tabular}
+			
+			\vspace{0.5cm}
+			
+			\caption*{(a) Strategy 1}
+			
+			\vspace{0.3cm}
+			
+			\begin{tabular}{c|cccccccc}
+				\hline
+				$X$ & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 \\
+				\hline
+				$P(X \mid C=1)$
+				& $\frac{1}{5}$ & $\frac{4}{5}$ & 0 & 0
+				& 0 & 0 & 0 & 0 \\
+				
+				$P(X \mid C=0)$
+				& 0 & 0 & $\frac{1}{11}$ & $\frac{2}{11}$
+				& $\frac{1}{11}$ & $\frac{4}{11}$ & $\frac{1}{11}$ & $\frac{2}{11}$ \\
+				\hline
+			\end{tabular}
+			
+			\caption*{(b) Strategy 2}
+		\end{table}
 		\subsection{Question 3}
+		A larger mutual information indicates that the feature $X$ provides
+		more information about the class variable $C$. Therefore, it is
+		generally a better choice for classification, as it reduces the
+		uncertainty about the class label more effectively.
+		
+		In this case, Strategy 2 has a higher mutual information than
+		Strategy 1, suggesting that Strategy 2 is the better choice.
 		\subsection{Question 4}
+		Since the coin toss is independent of the number drawn from
+		Bag B, we have $P(X|B)=P(X)$. Therefore, the mutual information
+		between the coin outcome and the drawn number is
+		
+		\[
+		I(X,B)=H(X)-H(X|B)=0.
+		\]
+		
+		Thus, knowing the coin outcome does not reduce the uncertainty
+		about the drawn number. Consequently, the expected number of
+		questions required to identify the number remains unchanged.
+		
 		\subsection{Question 5}
+		
+		Mutual information measures the statistical dependence between
+		two random variables.
+		
+		\subsubsection{Discrete Random Variables}
+		
+		For two discrete random variables $X$ and $Y$, with joint
+		probability mass function $p(x,y)$ and marginal probability
+		mass functions $p_X(x)$ and $p_Y(y)$, mutual information is
+		defined as
+		
+		\[
+		I(X,Y)=
+		\sum_x\sum_y p(x,y)
+		\log_2\frac{p(x,y)}{p_X(x)p_Y(y)}.
+		\]
+		
+		Equivalently,
+		
+		\[
+		I(X,Y)=H(X)-H(X|Y).
+		\]
+		
+		\subsubsection{Continuous Random Variables}
+		
+		For two continuous random variables $X$ and $Y$, with joint
+		probability density function $f_{X,Y}(x,y)$ and marginal
+		density functions $f_X(x)$ and $f_Y(y)$, mutual information
+		is defined as
+		
+		\[
+		I(X,Y)=
+		\int_{-\infty}^{+\infty}
+		\int_{-\infty}^{+\infty}
+		f_{X,Y}(x,y)
+		\log_2
+		\frac{f_{X,Y}(x,y)}
+		{f_X(x)f_Y(y)}
+		\,dx\,dy.
+		\]
+		
+		Equivalently,
+		
+		\[
+		I(X,Y)=h(X)-h(X|Y),
+		\]
+		
+		where $h(X)$ and $h(X|Y)$ denote the differential entropy
+		and conditional differential entropy, respectively.
+		
+		
 		\subsection{Question 6}
+		Let $X$ denote the target random variable and $Y$ denote
+		the additional information available before guessing.
+		
+		Without observing $Y$, the uncertainty about $X$ is $H(X)$.
+		After observing $Y$, the remaining uncertainty is $H(X|Y)$.
+		
+		The reduction in uncertainty is given by the mutual information:
+		
+		\[
+		I(X,Y)=H(X)-H(X|Y).
+		\]
+		
+		If $I(X,Y)=0$, observing $Y$ does not provide any additional
+		information about $X$.
+		
+		If $I(X,Y)>0$, observing $Y$ reduces the uncertainty about $X$.
+		A larger mutual information indicates a greater reduction
+		in uncertainty.
+		
+		For optimal binary questioning, the expected number of
+		questions is closely related to the entropy:
+		
+		\[
+		H(X)\leq L(X)<H(X)+1,
+		\]
+		
+		and, after observing $Y$,
+		
+		\[
+		H(X|Y)\leq L(X|Y)<H(X|Y)+1.
+		\]
+		
+		Therefore, mutual information measures the reduction
+		in the theoretical lower bound on the expected number
+		of binary questions, although it is not necessarily
+		equal to the actual reduction in the number of questions.
 		\subsection{Question 7}
+		\subsubsection{Mutual Information}
+		
+		Mutual information measures the amount of information that
+		one random variable provides about another.
+		
+		\[
+		I(X,Y)=H(X)-H(X|Y)
+		=\sum_{x,y}p(x,y)\log
+		\frac{p(x,y)}{p(x)p(y)}.
+		\]
+		
+		\textbf{Applications:}
+		Feature selection, decision trees, and measuring statistical
+		dependence.
+		
+		\textbf{Advantages:} Captures both linear and nonlinear
+		dependencies.
+		
+		\textbf{Disadvantages:} Can be difficult to estimate accurately
+		from limited data.
+		
+		
+		\subsubsection{Cross Entropy}
+		
+		Cross entropy measures the expected coding cost when using
+		a distribution $Q$ to represent the true distribution $P$.
+		
+		\[
+		H(P,Q)=-\sum_x P(x)\log Q(x).
+		\]
+		
+		\textbf{Applications:}
+		Classification, neural network training, and probabilistic
+		prediction.
+		
+		\textbf{Advantages:} Simple and effective as a loss function.
+		
+		\textbf{Disadvantages:} Asymmetric and depends on the choice
+		of the predicted distribution.
+		
+		
+		\subsubsection{KL Divergence}
+		
+		KL divergence measures the difference between two probability
+		distributions.
+		
+		\[
+		D_{\mathrm{KL}}(P\|Q)
+		=\sum_x P(x)\log\frac{P(x)}{Q(x)}.
+		\]
+		
+		\textbf{Applications:}
+		Variational inference, VAE, and probability distribution
+		approximation.
+		
+		\textbf{Advantages:} Measures distribution mismatch and
+		is always non-negative.
+		
+		\textbf{Disadvantages:} Asymmetric and may become infinite
+		when $Q(x)=0$ for some $P(x)>0$.
+		
+		
+		\subsubsection{Covariance}
+		
+		Covariance measures how two random variables vary together.
+		
+		\[
+		\operatorname{Cov}(X,Y)
+		=E[XY]-E[X]E[Y].
+		\]
+		
+		\textbf{Applications:}
+		Statistical analysis, PCA, and portfolio risk analysis.
+		
+		\textbf{Advantages:} Simple and indicates the direction
+		of linear association.
+		
+		\textbf{Disadvantages:} Depends on the measurement scales
+		and cannot capture general nonlinear dependencies.
+		
+		
+		\subsubsection{Correlation Coefficient}
+		
+		The correlation coefficient measures the strength and
+		direction of the linear relationship between two variables.
+		
+		\[
+		\rho_{XY}=
+		\frac{\operatorname{Cov}(X,Y)}
+		{\sigma_X\sigma_Y}.
+		\]
+		
+		\textbf{Applications:}
+		Exploratory data analysis, feature selection, and regression.
+		
+		\textbf{Advantages:} Scale-independent and ranges from
+		$-1$ to $1$.
+		
+		\textbf{Disadvantages:} Only measures linear association.
+		
+		
+		\subsubsection{Independence}
+		
+		Two random variables $X$ and $Y$ are independent if their
+		joint distribution equals the product of their marginal
+		distributions:
+		
+		\[
+		p(x,y)=p(x)p(y).
+		\]
+		
+		\textbf{Applications:}
+		Naive Bayes, Bayesian networks, and probabilistic modeling.
+		
+		\textbf{Advantages:} Provides a precise characterization
+		of statistical independence.
+		
+		\textbf{Disadvantages:} Does not quantify the degree of
+		dependence when variables are not independent.
+		
+		
+		\subsubsection{Comparison and Relationships}
+		
+		Mutual information, covariance, and correlation coefficient
+		all describe relationships between random variables.
+		
+		However, covariance and correlation coefficient mainly
+		measure linear dependence, whereas mutual information can
+		capture both linear and nonlinear dependencies.
+		
+		Cross entropy and KL divergence both compare probability
+		distributions. They are related by
+		
+		\[
+		H(P,Q)=H(P)+D_{\mathrm{KL}}(P\|Q).
+		\]
+		
+		Cross entropy is widely used as a loss function in
+		classification, while KL divergence is commonly used
+		for distribution approximation.
+		
+		Furthermore, independence implies zero covariance and
+		zero mutual information, but the converse of zero
+		covariance does not generally hold:
+		
+		\[
+		X\perp Y
+		\implies
+		\begin{cases}
+			\operatorname{Cov}(X,Y)=0,\\
+			I(X,Y)=0.
+		\end{cases}
+		\]
+		
+		In general, mutual information provides a more general
+		measure of statistical dependence than covariance
+		and correlation coefficient.
 \end{document}
